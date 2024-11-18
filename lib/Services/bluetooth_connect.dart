@@ -30,6 +30,8 @@ class BTConnect with ChangeNotifier {
     notifyListeners();
   }
 
+//get adapter state
+  BluetoothAdapterState get btAdapterState => _btAdapterState;
 //get btDevice
   BluetoothDevice? get bluetoothDevice => _bluetoothDevice;
   //init when scan results are found
@@ -80,35 +82,20 @@ class BTConnect with ChangeNotifier {
     notifyListeners();
   }
 
-// cancel to prevent duplicate listeners
-// subscription.cancel();
-
-//!Scan Devices
-// listen to scan results
-// Note: `onScanResults` clears the results between scans. You should use
-//  `scanResults` if you want the current scan results *or* the results from the previous scan.
-  // Future scanDevices() async {
-  //   if (_btAdapterState == BluetoothAdapterState.on) {
-  //     FlutterBluePlus.startScan(
-  //       timeout: const Duration(seconds: 10),
-  //     );
-
-  //     await FlutterBluePlus.scanResults.listen((results) {
-  //       ScanResult scanResult = results.first;
-  //       _bluetoothDevice = scanResult.device;
-  //       assignDevice(scanResult);
-  //     });
-  //   }
-  //   notifyListeners();
-  // }
-
   Future<void> scanAndAssign() async {
     await FlutterBluePlus.scanResults.listen((results) {
       if (results.isNotEmpty) {
         // Automatically pick the first device
-        bluetoothDevice = results.first.device;
+
+        results.forEach((result) {
+          if (result.device.platformName.isNotEmpty) {
+            _bluetoothDevice = result.device;
+          }
+        });
         print(
-            "Device assigned: ${bluetoothDevice!.advName}, remote: ${bluetoothDevice!.remoteId}");
+            "Device assigned: ${bluetoothDevice!.platformName}, remote: ${bluetoothDevice!.remoteId}");
+        notifyListeners();
+
         notifyListeners();
       }
     });
@@ -119,12 +106,12 @@ class BTConnect with ChangeNotifier {
   Stream<List<ScanResult>> get scanResults => FlutterBluePlus.scanResults;
 
 // select device
-  // Future<void> selectDevice(BluetoothDevice device) async {
-  //   bluetoothDevice = await device;
-  //   FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
-  //   print('Selected: ${bluetoothDevice!.platformName.toString()}');
-  //   notifyListeners();
-  // }
+  Future<void> selectDevice(BluetoothDevice device) async {
+    _bluetoothDevice = await device;
+    // FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
+    print('Selected: ${bluetoothDevice!.platformName.toString()}');
+    notifyListeners();
+  }
 
   // StreamSubscription<List<ScanResult>> scanResults() {
   //   return FlutterBluePlus.onScanResults.listen(
@@ -175,18 +162,12 @@ class BTConnect with ChangeNotifier {
     notifyListeners();
   }
 
-  //!Connect To A Device
-
   // listen for disconnection
-  void listenForDisconnection() {
-    // selectDevice(_bluetoothDevice!);
-    var onDisconnected = bluetoothDevice!.connectionState.listen(
+  Future listenForDisconnection() async {
+    final onDisconnected = await bluetoothDevice!.connectionState.listen(
       (BluetoothConnectionState state) async {
         if (state == BluetoothConnectionState.disconnected) {
-          // 1. typically, start a periodic timer that tries to
-          //    reconnect, or just call connect() again right now
           connectToDevice();
-          // 2. you must always re-discover services after disconnection!
           print(
               "${_bluetoothDevice!.disconnectReason?.code} ${_bluetoothDevice!.disconnectReason?.description}");
         }
@@ -198,11 +179,17 @@ class BTConnect with ChangeNotifier {
 
 // Connect to the device
   Future connectToDevice() async {
-    if (bluetoothDevice != null) {
-      await bluetoothDevice!.connect(autoConnect: false);
-    } else {
-      print('No device assigned yet');
+    try {
+      if (bluetoothDevice != null) {
+        await bluetoothDevice!.connect(autoConnect: false);
+      } else {
+        print('No device assigned yet');
+      }
+      notifyListeners();
+    } on FlutterBluePlusException catch (e) {
+      print(e.description);
     }
+
     notifyListeners();
   }
 
@@ -213,7 +200,7 @@ class BTConnect with ChangeNotifier {
   }
 
 // ??!Get Connected Devices
-  void getConnectedDevices() {
+  List<BluetoothDevice> getConnectedDevices() {
     List<BluetoothDevice> devs = FlutterBluePlus.connectedDevices;
     for (var d in devs) {
       print('connected device: ${d}');
@@ -222,5 +209,21 @@ class BTConnect with ChangeNotifier {
       }
     }
     notifyListeners();
+    return devs;
+  }
+
+  //Get system devices
+  Future<List<BluetoothDevice>> getSystemDevices() async {
+    // `withServices` required on iOS, ignored on android
+    List<Guid> withServices = [Guid("180F")];
+    List<BluetoothDevice> devs =
+        await FlutterBluePlus.systemDevices(withServices);
+    for (var d in devs) {
+      await d.connect(); // Must connect *our* app to the device
+      await d.discoverServices();
+    }
+    notifyListeners();
+    print('devs ${devs}');
+    return devs;
   }
 }

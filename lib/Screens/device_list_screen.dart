@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:yogasmart_demo/Routes/route_manager.dart';
 import 'package:yogasmart_demo/Services/bluetooth_connect.dart';
 import 'package:yogasmart_demo/Widgets/custom_card.dart';
 
@@ -29,7 +30,7 @@ class DeviceListScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Devices',
+              'Select Your Mat',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 20,
@@ -57,30 +58,35 @@ class DeviceListScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: CustomCard(
+                      buttonText: 'Connect',
                       title: 'YogaConnect',
                       subtitle: 'emulated remote id:12345',
-                      onPressed: () {},
+                      onPressConnect: () async {
+                        await Duration(seconds: 3);
+                        CircularProgressIndicator();
+                      },
                     ),
                   ),
                   Expanded(
                     child: ListView.builder(
-                      // shrinkWrap: true,
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
                         final data = snapshot.data![index];
-                        value.bluetoothDevice = data.device;
                         return data.device.platformName.isNotEmpty
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: CustomCard(
-                                  // tileTap: () =>
-                                  //     value.selectDevice(data.device),
+                                  buttonText: 'Connect',
                                   title: data.device.platformName,
                                   subtitle: '${data.device.remoteId}',
-                                  onPressed: () async {
-                                    // var device = data.device;
-                                    value.connectToDevice();
-                                    value.getConnectedDevices();
+                                  onPressConnect: () async {
+                                    value.selectDevice(data.device);
+                                    value.disconnectDevice();
+                                    value.listenForDisconnection();
+
+                                    // value.getConnectedDevices();
+                                    print(
+                                        'connected: ${value.getConnectedDevices()}');
                                   },
                                 ),
                               )
@@ -88,6 +94,20 @@ class DeviceListScreen extends StatelessWidget {
                       },
                     ),
                   ),
+                  SafeArea(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context)
+                            .pushNamed(RouteManager.connectedDeviceScreen);
+                      },
+                      child: Text(
+                        'Connected',
+                        style: TextStyle(
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  )
                 ],
               );
             } else {

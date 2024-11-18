@@ -54,21 +54,7 @@ class HomeScreen extends StatelessWidget {
                   onPressed: () {
                     BTConnect().btSupportCheck;
                     BTConnect().btOnOff();
-                    // BTConnect().scanResults;
                     Navigator.pushNamed(context, RouteManager.deviceListScreen);
-                    // print(BTConnect().scanResultsVar[0]);
-
-                    // showCupertinoDialog(
-                    //   barrierDismissible: true,
-                    //   context: context,
-                    //   builder: (context) => AlertDialog.adaptive(
-                    //     insetAnimationCurve: Curves.linear,
-                    //     title: Text('Available Bluetooth Devices'),
-                    //     content: Column(
-                    //       children: [],
-                    //     ),
-                    //   ),
-                    // );
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

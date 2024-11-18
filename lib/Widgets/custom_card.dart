@@ -8,12 +8,13 @@ class CustomCard extends StatelessWidget {
     this.title,
     this.subtitle,
     // this.tileTap,
-    required this.onPressed,
+    required this.onPressConnect,
+    required this.buttonText,
   });
   String? title;
   String? subtitle;
-  Function() onPressed;
-  // Function()? tileTap;
+  String buttonText;
+  Function() onPressConnect;
   @override
   Widget build(BuildContext context) {
     return Consumer<BTConnect>(
@@ -22,7 +23,6 @@ class CustomCard extends StatelessWidget {
         child: Column(
           children: [
             ListTile(
-              // onTap: tileTap,
               title: Text(
                 '${title}',
                 style: TextStyle(
@@ -35,18 +35,20 @@ class CustomCard extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                 ),
-                onPressed: () {
-                  value.btPermissionGranted();
-                  value.listenForDisconnection();
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      content: Text('Device connected successsfully'),
-                    ),
-                  );
-                },
+                onPressed: onPressConnect,
+
+                // () {
+                //   // value.btPermissionGranted();
+                //   // value.listenForDisconnection();
+                //   // showDialog(
+                //   //   context: context,
+                //   //   builder: (context) => AlertDialog(
+                //   //     content: Text('Device connected successsfully'),
+                //   //   ),
+                //   // );
+                // },
                 child: Text(
-                  'Connect',
+                  buttonText,
                   style: TextStyle(
                     color: Colors.white,
                   ),
